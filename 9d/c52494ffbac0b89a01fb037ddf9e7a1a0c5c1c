@@ -1,0 +1,21 @@
+README.md
+  s_dfb70d3f232368::t_8512455aef0258 8
+skills/clanker-cleanup/SKILL.md
+  s_dfb70d3f232368::t_cc33d838a66478 3,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,44-49,56-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9dc52494ffbac0b89a01fb037ddf9e7a1a0c5c1c",
+  "prompts": {},
+  "sessions": {
+    "s_dfb70d3f232368": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cac5e7c7-569c-4437-8f55-ea22485fdc11",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Allen Lin <allen@osmosis.ai>"
+    }
+  }
+}
