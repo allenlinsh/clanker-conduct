@@ -5,7 +5,7 @@ Agent skills ([Agent Skills](https://agentskills.io)) for Claude, Cursor, Codex,
 | Skill | Does |
 | --- | --- |
 | [`clanker-conduct`](skills/clanker-conduct/SKILL.md) | My preferences for how agents talk and code |
-| [`clanker-cleanup`](skills/clanker-cleanup/SKILL.md) | Simplifies an overcomplicated branch, PR, script, config or runbook, keeping required behavior and the user's decisions |
+| [`clanker-cleanup`](skills/clanker-cleanup/SKILL.md) | Removes code, checks, comments and docs a change doesn't need (AI slop), keeping its behavior and the user's decisions |
 | [`tmux`](skills/tmux/SKILL.md) | Lets an agent open tabs and splits in its starting tmux session, run and read commands in them, and close what it opened |
 
 ## Install
