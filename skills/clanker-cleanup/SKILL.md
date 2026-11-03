@@ -5,64 +5,92 @@ description: Use when the user says a branch, PR, script, config or runbook is o
 
 # clanker-cleanup
 
-Make a change only as complex as its job needs. Remove what the design doesn't need, keep what it does, and never undo a decision the user made. Comment-only cleanup is `deslop`; write everything to the user per `clanker-conduct`.
+Make a change only as complex as its job needs. Remove what the change doesn't need, keep what it does, and never undo a decision the user made. These rules apply to any language and any repo. Comment-only cleanup is `deslop`; write everything to the user per `clanker-conduct`.
 
-## 1. Scope and two lists
+## Before cleaning up
 
-- Scope: the branch diff against its base (`git diff <base>...HEAD`), plus every doc that describes it: README or runbook, design doc, PR description, examples.
-- Before reviewing, write down:
-  - **Must keep:** behavior the design or user requires, taken from the design doc, the PR description and the conversation.
-  - **User decisions:** choices the user made in conversation. Search the transcript when unsure. Example: "the web form takes the served model name", which rules out going back to full provider paths.
+### Scope
 
-## 2. Review: four read-only agents, launched in one message
+The scope is the branch diff against its base (`git diff <base>...HEAD`) plus every doc that describes the change: README, runbook, design doc, PR description, examples. Leave code outside the diff alone.
 
-Give each agent the repo path, the diff command, the file list, both lists, and this rule: report only changes that make the result simpler. Each finding gives file, line, summary, cost, and the simpler replacement.
+### Write down what must stay
 
-| Angle | Looks for |
-| --- | --- |
-| Simplification | The smells below |
-| Reuse | An existing constant or helper that fits without changing shared or production code |
-| Waste | Repeated work, only when the cheaper version is also simpler. Lists premature optimization to delete. |
-| Root cause | Special cases or workarounds where a deeper fix is also less code |
+Before reviewing, list:
+- **Must keep:** behavior the user or the design requires, taken from the design doc, the PR description and the conversation.
+- **User decisions:** choices the user made in conversation. Search the conversation when unsure. E.g. the user chose to keep an old endpoint for existing clients, so don't delete it as unused.
 
-## 3. Smells
+### What simpler means
 
-| Smell | Example | Simpler form |
-| --- | --- | --- |
-| Shell helper or alias in docs | `k() { kubectl --context=... "$@"; }` | Full commands; state the context once |
-| Option nobody passes | `dryRun` prop, `--target-mb`, `idleMs = IDLE_MS` parameter | Constant |
-| Config field with one value everywhere | `max_inflight_body_bytes` = 1 GiB in every config | Constant in code |
-| Deny-list of values the code generates | List of flags a config may not set | Put generated values last so they win |
-| Pattern copied where it does nothing | Script-hash annotation on a CronJob; production HA (2 replicas, PodDisruptionBudget, anti-affinity) on a dev service | Delete |
-| Probe or timeout that only adds a deadline | `startupProbe` with no liveness probe | Readiness probe only |
-| Value equal to the default | `terminationGracePeriodSeconds: 30` | Delete |
-| Guard for a case that can't happen | Re-checking a value already validated by the same regex | Delete |
-| Second copy of the runbook in code output | Generator printing the apply commands | One line pointing to the runbook |
-| Measurement tooling or numbers whose result depends on context | Load-test script; throughput in configs | Delete |
-| Value computed again after validation | Label value converted once to validate, then 14 more times | Compute once, pass the result |
-| Hand-written code for a library one-liner | PNG encoder | The library call |
-| Runbook text restating code, duplicate steps, speculative tips | `logs -f` next to `wait` for the same Job | Cut |
+Simpler means fewer things a reader must track: lines, options, branches, files or concepts. A finding counts only if it reduces one of these without adding to another.
 
-## 4. Triage
+## What to remove
 
-Apply a finding when the result is simpler and every Must keep item still holds. Skip it, and list it under "Kept on purpose", when it:
-- reverses a User decision;
+### Options nobody sets
+
+A parameter, flag, prop or config field that every caller sets to the same value, or never sets, becomes a constant. E.g. `fetch(url, timeout_ms=5000)` where no caller passes `timeout_ms`.
+
+### Values equal to the default
+
+Delete settings that restate what already happens. E.g. passing `retries: 0` to a client whose default is `0`.
+
+### Checks for cases that can't happen
+
+Delete checks that earlier code or the type system already guarantees, and checks on values the code produces itself. E.g. re-checking a string against the regex it already passed, or a null check on a non-optional value.
+
+### Repeated work
+
+Compute a value once and pass the result. E.g. normalizing a name to validate it, then normalizing it again at every use.
+
+### Code that something existing already does
+
+Use the language, the standard library, an existing dependency or an existing helper in the repo instead of a hand-written version. E.g. a hand-written retry loop around a client that has built-in retries. Don't change shared code to make it fit.
+
+### Abstractions with one user
+
+Inline a base class, interface, factory, wrapper or registry that has one implementation or one caller. Add it back when a second user exists.
+
+### Patterns copied where they do nothing
+
+Delete setup copied from another context where it has no effect here. E.g. production redundancy on a dev-only service, or a cache around a function called once per process.
+
+### Optimization without a measured need
+
+Delete optimization that adds code without a measured problem behind it. Keep a faster version only when it is also simpler.
+
+### Workarounds instead of fixes
+
+Replace a special case that handles one bad result with a fix to its cause, when the fix is less code.
+
+### Leftovers from building the change
+
+Delete one-off scripts (benchmarks, debug helpers) and numbers that held only on one machine or run, unless the change needs them to run or be maintained.
+
+### Docs that repeat or guess
+
+- Write each fact in one place. Delete doc text that restates code, duplicate steps, and code output that repeats a doc. E.g. a script that prints the setup steps the README also lists should print one line pointing to the README.
+- Delete speculative tips. Write full commands instead of shell aliases or helper functions.
+
+## What not to change
+
+Skip a finding, and report it under "Kept on purpose", when it:
+- reverses a user decision;
 - changes shared or production code outside the diff;
 - renames or moves code without removing any.
 
-A behavior change is fine when the behavior wasn't required. List each one with its observable effect.
+A behavior change is fine when the behavior wasn't required. Report each one with its effect.
 
-## 5. Apply and verify
+## Doing the cleanup
 
-- Edit, then regenerate generated files (manifests, snapshots, lockfiles).
-- Run the type check, lint, tests and render or synth. Update tests that only assert old wording.
-- Sync every doc in scope, including the design doc and the PR description.
-- One commit with a comma-separated message. Push only if the user authorized pushing this branch.
+1. Review the diff against the rules above. Each finding names the file, the line, what it costs, and the simpler replacement. On a large diff, split the review across read-only agents launched together, one per angle (removals, reuse, repeated work, root causes), and give each the scope, both lists and these rules.
+2. If the user asked only for a review, report the findings and stop. Otherwise apply the findings that pass "What not to change", then regenerate generated files (lockfiles, snapshots, generated code).
+3. Run the checks the repo already uses: type check, lint, tests, build. Update tests that only assert old wording.
+4. Sync every doc in scope, including the PR description.
+5. Make one commit with a comma-separated message, e.g. `remove unused timeout option, inline config loader`. Push only if the user authorized pushing this branch.
 
-## 6. Report
+## Report
 
 1. One line: commit, lines removed and added.
 2. **Removed:** bullets.
 3. **Behavior changes:** each with its effect.
-4. **Kept on purpose:** each finding and why.
-5. **Checks:** what ran, and what didn't (for example, never run against a live cluster).
+4. **Kept on purpose:** each skipped finding and why.
+5. **Checks:** what ran, and what didn't (e.g. anything that needs live infrastructure).
