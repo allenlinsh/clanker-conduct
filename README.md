@@ -20,10 +20,38 @@ npx skills add allenlinsh/clanker-conduct --skill tmux
 
 Or import the GitHub repo URL in your agent's skills / rules UI.
 
+## Claude Code status line
+
+[`claude-code/statusline-command.sh`](claude-code/statusline-command.sh) shows the directory and git branch, the model, context window usage, and 5-hour and 7-day rate limit usage:
+
+```text
+~/code/my-repo ⎇ main › Opus 5.5 › ctx 11% › 5h:27% 7d:43%
+```
+
+Context usage turns yellow at 60% and red at 80%. Rate limits turn yellow at 60% and red at 85%, and appear only when Claude Code reports them. It needs `jq`, `git`, and a [Nerd Font](https://www.nerdfonts.com) for the branch icon and separators.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/allenlinsh/clanker-conduct/main/claude-code/statusline-command.sh -o ~/.claude/statusline-command.sh
+chmod +x ~/.claude/statusline-command.sh
+```
+
+Then add to `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline-command.sh"
+  }
+}
+```
+
 ## Layout
 
 ```text
 .
+├── claude-code/
+│   └── statusline-command.sh   # Claude Code status line
 └── skills/
     └── <name>/
         ├── SKILL.md       # required — frontmatter + instructions
