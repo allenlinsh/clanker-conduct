@@ -1,0 +1,23 @@
+README.md
+  s_dfb70d3f232368::t_64dfdd57acbd6d 23-26,28-48,53
+  s_dfb70d3f232368::t_20c2e1b0755dcc 27
+  s_dfb70d3f232368::t_4f3049d7cf5dfd 54
+claude-code/statusline-command.sh
+  s_dfb70d3f232368::t_d847f6fb941094 1-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8685d81cc23eb18314e34ee0093c1162c8749636",
+  "prompts": {},
+  "sessions": {
+    "s_dfb70d3f232368": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cac5e7c7-569c-4437-8f55-ea22485fdc11",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Allen Lin <allen@osmosis.ai>"
+    }
+  }
+}
